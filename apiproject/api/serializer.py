@@ -1,7 +1,26 @@
 from rest_framework import serializers
-from .models import User
+from .models import Teacher, Class, Student
 
-class UserSerializer(serializers.ModelSerializer):
+class StudentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = '__all__'
+        model = Student
+        fields = ['id', 'name', 'age', 'class_assigned']
+
+class ClassSerializer(serializers.ModelSerializer):
+    students = StudentSerializer(many=True, read_only=True)
+# Gunakan PrimaryKeyRelatedField untuk field ForeignKey saat membuat/mengupdate
+    teacher_id = serializers.PrimaryKeyRelatedField(
+        queryset=Teacher.objects.all(), source='teacher', write_only=True
+    )
+
+    class Meta:
+        models = Class
+        fields = ['id', 'name', 'teacher', 'students', 'teacher_id']
+        read_only_fields = ['teacher']
+
+class TeacherSerializer(serializers.ModelSerializer):
+    classes = ClassSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Teacher
+        fields = ['id', 'name', 'subject', 'classes']
