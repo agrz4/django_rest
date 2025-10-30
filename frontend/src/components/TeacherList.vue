@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="teacher-list">
         <h2>List Teacher</h2>
         <p v-if="loading">Loading...</p>
@@ -64,4 +64,4 @@ li {
   padding: 5px;
   border-bottom: 1px dashed #eee;
 }
-</style>
+</style> -->
