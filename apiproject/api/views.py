@@ -26,6 +26,18 @@ class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.select_related('teacher').all()
     serializer_class = ClassSerializer
 
+    def create(self, request, *args, **kwargs):
+        # Cek apakah data yang masuk berupa list (untuk bulk create)
+        many = isinstance(request.data, list)
+
+        # Inisiasi serializer dengan many=True jika data berupa list
+        serializer = self.get_serializer(data=request.data, many=many)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.select_related('class_assigned').all()
     serializer_class = StudentSerializer
