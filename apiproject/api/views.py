@@ -3,7 +3,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
-from .models import Teacher, Class, Student
+from teachers.models import Teacher
+from classes.models import Class
+from students.models import Student
 from .serializer import TeacherSerializer, ClassSerializer, StudentSerializer
 
 class TeacherViewSet(viewsets.ModelViewSet):
