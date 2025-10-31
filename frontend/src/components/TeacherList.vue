@@ -1,10 +1,28 @@
 <template>
     <div class="list-container teacher-list">
         <h4>Teachers List ({{ teachers.length }})</h4>
+
+        <button @click="openCreateForm" class="btn btn-create">
+            + Add Teacher
+        </button>
+
         <ul v-if="!loading && !error">
             <li v-for="teacher in teachers" :key="teacher.id" :class="{ 'deleted-item': teacher.deleted }">
-                {{ teacher.name }} ({{ teacher.subject }})
+                <span class="teacher-info">
+                    {{ teacher.name }} ({{ teacher.subject }})
                 <span v-if="teacher.deleted" class="deleted-tag">🗑️</span>
+                </span>
+
+                <div class="actions">
+                    <button
+                    @click="softDelete(teacher.id)"
+                    :disabled="teacher.deleted"
+                    :class="{'btn-delete': !teacher.deleted, 'btn-disabled': teacher.deleted}">
+                {{ teacher.deleted ? 'Deleted' : 'Soft Delete' }}
+                </button>
+
+                <button class="btn-update" @click="openEditForm(teacher)">Edit</button>
+                </div>
             </li>
         </ul>
     </div>
@@ -41,22 +59,64 @@ export default {
                 this.error = 'Failed to load teacher.';
                 this.loading = false;
             });
+        },
+
+        // method CRUD
+        openCreateForm() {
+            this.$emit('open-create');
+        },
+        openEditForm(teacher) {
+            this.$emit('open-edit', teacher);
+        },
+        async softDelete(id) {
+            if (!confirm(`You sure to soft delete Teacher ID ${id}?`)) {
+                return;
+            }
+
+            try {
+                await axios.delete(API_URL + `${id}/`);
+
+                alert(`Teacher ID ${id} successfully deleted.`);
+                this.fetchTeachers();
+
+            } catch (error) {
+                console.error("Failed to soft delete:", error.response || error);
+            }
         }
     }
 };
 </script>
 
 <style scoped>
-
-.list-container {
-  /* Style akan dikontrol di Dashboard.vue */
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 15px;
+/* Style tambahan */
+.list-container { padding: 15px; }
+ul { padding: 0; }
+li { 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dotted #eee;
 }
-ul { list-style-type: none; padding: 0; }
-li { padding: 5px 0; border-bottom: 1px dotted #eee; text-align: left; }
+.teacher-info { flex-grow: 1; }
+.actions button {
+    margin-left: 5px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.btn-create {
+    background-color: #42b983;
+    color: white;
+    margin-bottom: 15px;
+    padding: 8px 15px;
+}
+.btn-delete { background-color: #e74c3c; color: white; }
+.btn-update { background-color: #f39c12; color: white; }
+.btn-disabled { background-color: #bdc3c7; cursor: not-allowed; color: #666; }
+
 .deleted-item { text-decoration: line-through; color: #a0a0a0; }
 .deleted-tag { color: red; font-weight: bold; }
-h4 { text-align: center; }
 </style>

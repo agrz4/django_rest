@@ -1,9 +1,9 @@
 <template>
     <div class="list-container class-list">
-        <h4>List Class ({{ classes.length }})</h4>
+        <h4>Class List ({{ classes.length }})</h4>
         <ul v-if="!loading && !error">
             <li v-for="cls in classes" :key="cls.id">
-                {{ cls.name }} taught by **{{ getTeacherName(cls.teacher) }}**
+                {{ cls.name }} Diajar Oleh {{ getTeacherName(cls.teacher) }}
             </li>
         </ul>
     </div>

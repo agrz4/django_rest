@@ -1,9 +1,9 @@
 <template>
     <div class="list-container student-list">
-        <h4>List Students ({{ students.length }})</h4>
+        <h4>Students Lists ({{ students.length }})</h4>
         <ul v-if="!loading && !error">
             <li v-for="student in students" :key="student.id">
-                {{ student.name }} ({{ student.age }} tahun) - Kelas: **{{ getClassId(student.class_assigned) }}**
+                {{ student.name }} ({{ student.age }} tahun) - Kelas: {{ getClassId(student.class_assigned) }}
             </li>
         </ul>
     </div>
