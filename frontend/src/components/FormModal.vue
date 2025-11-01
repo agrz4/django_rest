@@ -107,13 +107,20 @@ export default {
         },
         preparePayload() {
             // Membersihkan payload dari nilai null/kosong jika tidak diperlukan
-            return Object.keys(this.formData).reduce((acc, key) => {
+            const payload = Object.keys(this.formData).reduce((acc, key) => {
                 const value = this.formData[key];
                 if (value !== '' && value !== null) {
                     acc[key] = value;
                 }
                 return acc;
             }, {});
+
+            // Convert number fields to integers
+            if (payload.age) {
+                payload.age = parseInt(payload.age);
+            }
+
+            return payload;
         },
         formatError(errors) {
             if (typeof errors == 'object') {

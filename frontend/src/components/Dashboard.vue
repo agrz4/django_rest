@@ -1,6 +1,7 @@
 <template>
     <div class="dashboard">
         <EntityFormModal
+            v-if="currentFormType"
             :is-visible="isModalVisible"
             :form-config="currentFormConfig"
             :baseURL="currentBaseURL"
@@ -37,8 +38,8 @@
         <div class="content-section">
             <div class="data-lists">
                 <TeacherList @data-loaded="updateData" @open-create="openModal('teacher')" @open-edit="openModal('teacher', $event)"/>
-                <ClassList :teacher-map="teacherMap" @data-loaded="updateData"/>
-                <StudentList :class-map="classMap" @data-loaded="updateData"/>
+                <ClassList :teacher-map="teacherMap" @data-loaded="updateData" @open-create="openModal('class')" @open-edit="openModal('class', $event)"/>
+                <StudentList :class-map="classMap" @data-loaded="updateData" @open-create="openModal('student')" @open-edit="openModal('student', $event)"/>
             </div>
         </div>
     </div>
@@ -158,9 +159,9 @@ export default {
                     fields: {
                         name: { label: 'Nama Siswa', type: 'text', placeholder: 'Nama Siswa' },
                         age: { label: 'Usia', type: 'number', placeholder: '15' },
-                        class_assigned: { // Nama field harus sesuai dengan Serializer DRF
-                            label: 'Kelas', 
-                            type: 'select', 
+                        class_assigned_id: { // Nama field harus sesuai dengan Serializer DRF
+                            label: 'Kelas',
+                            type: 'select',
                             options: this.classes.filter(c => !c.deleted)
                         },
                     }
