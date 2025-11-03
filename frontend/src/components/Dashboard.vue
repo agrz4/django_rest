@@ -9,7 +9,10 @@
             @close="isModalVisible = false"
             @success="handleSuccessCreation"
         />
-        <h1 class="dashboard-title">School Management</h1>
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">School Management</h1>
+            <button @click="logout" class="logout-btn">Logout</button>
+        </div>
 
         <div class="stats-grid">
             <div class="stat-card teacher-card">
@@ -131,6 +134,11 @@ export default {
             this.currentEditData = editData;
             this.isModalVisible = true;
         },
+        logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            this.$router.push('/login');
+        },
         getFormConfig(type) {
             switch (type) {
                 case 'teacher':
@@ -184,12 +192,34 @@ export default {
   color: #333;
 }
 
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
 .dashboard-title {
-  text-align: center;
   color: white;
   font-size: 2.5rem;
-  margin-bottom: 30px;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  margin: 0;
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: white;
+  color: #667eea;
 }
 
 .stats-grid {
@@ -253,6 +283,12 @@ export default {
 @media (max-width: 768px) {
   .dashboard {
     padding: 15px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
   }
 
   .dashboard-title {

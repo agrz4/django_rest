@@ -9,7 +9,7 @@
         <ul v-if="!loading && !error">
             <li v-for="cls in classes" :key="cls.id" :class="{ 'deleted-item': cls.deleted }">
                 <span class="class-info">
-                {{ cls.name }} taught by {{ getTeacherName(cls.teacher) }}
+                {{ cls.name }} Diajar oleh {{ getTeacherName(cls.teacher) }}
                 <span v-if="cls.deleted" class="deleted-tag">🗑️</span>
                 </span>
 

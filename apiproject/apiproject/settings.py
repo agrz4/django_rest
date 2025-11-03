@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt',
     'safedelete',
 
     # aplikasi baru
@@ -46,6 +47,27 @@ INSTALLED_APPS = [
     'classes.apps.ClassesConfig',
     'students.apps.StudentsConfig',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+# Konfigurasi JWT untuk masa berlaku token
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': 'django-insecure-s8vsv1p*#t_9$w8^y66q!)v)+cs#k^!sef*m^sv0e*g!6=7nu0',
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
