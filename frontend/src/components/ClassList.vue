@@ -2,18 +2,21 @@
     <div class="list-container class-list">
         <h4>Class List ({{ classes.length }})</h4>
 
-        <button @click="openCreateForm" class="btn btn-create">
+        <button v-if="canManage" @click="openCreateForm" class="btn btn-create">
             + Add Class
         </button>
 
-        <ul v-if="!loading && !error">
+        <p v-if="loading">Loading class data...</p>
+        <p v-if="error">{{ error }}</p>
+
+        <ul v-else>
             <li v-for="cls in classes" :key="cls.id" :class="{ 'deleted-item': cls.deleted }">
                 <span class="class-info">
-                {{ cls.name }} Diajar oleh {{ getTeacherName(cls.teacher) }}
+                {{ cls.name }} Diajar oleh **{{ getTeacherName(cls.teacher) }}**
                 <span v-if="cls.deleted" class="deleted-tag">🗑️</span>
                 </span>
 
-                <div class="actions">
+                <div v-if="canManage" class="actions">
                     <button
                     @click="softDelete(cls.id)"
                     :disabled="cls.deleted"
@@ -21,7 +24,10 @@
                         {{ cls.deleted ? 'Deleted' : 'Soft Delete' }}
                     </button>
 
-                    <button class="btn-update" @click="openEditForm(cls)">Edit</button>
+                    <button class="btn-update" @click="openEditForm(cls)" :disabled="cls.deleted">Edit</button>
+                </div>
+                <div v-else-if="cls.deleted" class="actions">
+                    <span class="deleted-tag">Status: Deleted</span>
                 </div>
             </li>
         </ul>
@@ -35,49 +41,63 @@ import axios from 'axios';
 const API_URL = 'http://127.0.0.1:8000/api/classes/';
 
 export default {
-  name: 'ClassList',
-  props: {
-    teacherMap: { type: Object, required: true }
-  },
-  data() {
-    return {
-      classes: [],
-      loading: true,
-      error: null
-    };
-  },
-  mounted() {
-    this.fetchClasses();
-  },
-  methods: {
-    fetchClasses() {
-      axios.get(API_URL)
-        .then(response => {
-          this.classes = response.data;
-          this.loading = false;
-          // Emit data-loaded to update Dashboard's teacherMap
-          this.$emit('data-loaded', { module: 'classes', data: response.data });
-        })
-        .catch(error => {
-          console.error("Failed to fetch classes:", error);
-          this.error = 'Failed to load classes.';
-          this.loading = false;
-        });
+    name: 'ClassList',
+    props: {
+        // Digunakan untuk mendapatkan nama guru di tampilan list
+        teacherMap: { type: Object, required: true }
     },
+    data() {
+        return {
+            classes: [],
+            loading: true,
+            error: null
+        };
+    },
+    // Tambahkan Computed Property untuk Kontrol Akses
+    computed: {
+        canManage() {
+            // Admin dan Teacher diizinkan untuk mengelola Kelas.
+            const role = localStorage.getItem('user_role');
+            return role === 'admin' || role === 'teacher';
+        }
+    },
+    mounted() {
+        this.fetchClasses();
+    },
+    methods: {
+        fetchClasses() {
+            // Menggunakan Axios untuk memanfaatkan Interceptor JWT
+            axios.get(API_URL)
+                .then(response => {
+                    this.classes = response.data;
+                    this.loading = false;
+                    this.$emit('data-loaded', { module: 'classes', data: response.data });
+                })
+                .catch(error => {
+                    console.error("Failed to fetch classes:", error.response || error);
+                    this.error = 'Failed to load classes. Access Denied or Token Expired.';
+                    this.loading = false;
+                });
+        },
 
         // method CRUD
         openCreateForm() {
-            this.$emit('open-create');
+            if (this.canManage) {
+                this.$emit('open-create');
+            }
         },
         openEditForm(cls) {
-            this.$emit('open-edit', cls);
+            if (this.canManage && !cls.deleted) {
+                this.$emit('open-edit', cls);
+            }
         },
         async softDelete(id) {
-            if (!confirm(`You sure to soft delete Class ID ${id}?`)) {
+            if (!this.canManage || !confirm(`You sure to soft delete Class ID ${id}?`)) {
                 return;
             }
 
             try {
+                // Mengirim request DELETE
                 await axios.delete(API_URL + `${id}/`);
 
                 alert(`Class ID ${id} successfully deleted.`);
@@ -85,20 +105,21 @@ export default {
 
             } catch (error) {
                 console.error("Failed to soft delete:", error.response || error);
+                alert("Failed to soft delete. Check console for details.");
             }
         },
 
         // --- Helper ---
         getTeacherName(teacherId) {
-          // teacherId is already the teacher name from the API
-          return teacherId || 'Unknown';
+            // Menggunakan teacherMap dari props untuk resolusi nama Guru
+            return this.teacherMap[teacherId] || 'Unknown';
         }
-  }
+    }
 };
 </script>
 
 <style scoped>
-/* Style tambahan */
+/* Style Anda yang sudah ada */
 .list-container { padding: 15px; }
 ul { padding: 0; }
 li {

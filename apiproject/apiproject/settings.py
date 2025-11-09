@@ -46,7 +46,10 @@ INSTALLED_APPS = [
     'teachers.apps.TeachersConfig',
     'classes.apps.ClassesConfig',
     'students.apps.StudentsConfig',
+    'user_auth.apps.UserAuthConfig',
 ]
+
+AUTH_USER_MODEL = 'user_auth.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -62,11 +65,12 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), 
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': 'django-insecure-s8vsv1p*#t_9$w8^y66q!)v)+cs#k^!sef*m^sv0e*g!6=7nu0',
+    'TOKEN_OBTAIN_PAIR_SERIALIZER': 'apiproject.settings.CustomTokenObtainPairSerializer',
 }
 
 MIDDLEWARE = [
@@ -164,3 +168,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+def get_user_role(user):
+    if hasattr(user, 'teacher_profile'):
+        return {'role': 'teacher', 'id': user.teacher_profile.id}
+    if hasattr(user, 'student_profile'):
+        return {'role': 'student', 'id': user.student_profile.id}
+    return {'role': 'admin', 'id': user.id}
+
+# CustomTokenObtainPairSerializer will be defined after Django apps are ready
+# CustomTokenObtainPairSerializer will be defined after Django apps are ready

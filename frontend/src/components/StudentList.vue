@@ -2,18 +2,21 @@
     <div class="list-container student-list">
         <h4>Students Lists ({{ students.length }})</h4>
 
-        <button @click="openCreateForm" class="btn btn-create">
+        <button v-if="canManage" @click="openCreateForm" class="btn btn-create">
             + Add Student
         </button>
 
-        <ul v-if="!loading && !error">
+        <p v-if="loading">Loading student data...</p>
+        <p v-if="error">{{ error }}</p>
+
+        <ul v-else>
             <li v-for="student in students" :key="student.id" :class="{ 'deleted-item': student.deleted }">
                 <span class="student-info">
                 {{ student.name }} ({{ student.age }} tahun) - Kelas: {{ getClassId(student.class_assigned) }}
                 <span v-if="student.deleted" class="deleted-tag">🗑️</span>
                 </span>
 
-                <div class="actions">
+                <div v-if="canManage" class="actions">
                     <button
                     @click="softDelete(student.id)"
                     :disabled="student.deleted"
@@ -21,7 +24,10 @@
                         {{ student.deleted ? 'Deleted' : 'Soft Delete' }}
                     </button>
 
-                    <button class="btn-update" @click="openEditForm(student)">Edit</button>
+                    <button class="btn-update" @click="openEditForm(student)" :disabled="student.deleted">Edit</button>
+                </div>
+                <div v-else-if="student.deleted" class="actions">
+                    <span class="deleted-tag">Status: Deleted</span>
                 </div>
             </li>
         </ul>
@@ -33,47 +39,73 @@
 import axios from 'axios';
 
 const API_URL = 'http://127.0.0.1:8000/api/students/';
+const CLASS_API_URL = 'http://127.0.0.1:8000/api/classes/'; // Diperlukan untuk form
 
 export default {
-  name: 'StudentList',
-  props: {
-    classMap: { type: Object, required: true }
-  },
-  data() {
-    return {
-      students: [],
-      loading: true,
-      error: null
-    };
-  },
-  mounted() {
-    this.fetchStudents();
-  },
-  methods: {
-    fetchStudents() {
-      axios.get(API_URL)
-        .then(response => {
-          this.students = response.data;
-          this.loading = false;
-          // Emit data-loaded agar Dashboard dapat memperbarui state students
-          this.$emit('data-loaded', { module: 'students', data: response.data });
-        })
-        .catch(error => {
-          console.error("Gagal mengambil data Siswa:", error);
-          this.error = 'Gagal memuat Siswa.';
-          this.loading = false;
-        });
+    name: 'StudentList',
+    props: {
+        classMap: { type: Object, required: true }
     },
+    data() {
+        return {
+            students: [],
+            classes: [], // Diperlukan untuk opsi select di form
+            loading: true,
+            error: null
+        };
+    },
+    // Tambahkan Computed Property untuk Kontrol Akses
+    computed: {
+        canManage() {
+            // Admin dan Teacher diizinkan untuk melihat dan memanipulasi daftar siswa.
+            const role = localStorage.getItem('user_role');
+            return role === 'admin' || role === 'teacher';
+        }
+    },
+    mounted() {
+        this.fetchStudents();
+        // Karena komponen ini mungkin memanggil modal, kita perlu fetch data FK juga.
+        this.fetchClassesForForm(); 
+    },
+    methods: {
+        fetchStudents() {
+            axios.get(API_URL)
+                .then(response => {
+                    this.students = response.data;
+                    this.loading = false;
+                    this.$emit('data-loaded', { module: 'students', data: response.data });
+                })
+                .catch(error => {
+                    console.error("Gagal mengambil data Siswa:", error.response || error);
+                    this.error = 'Failed to load student data. Access Denied or Token Expired.';
+                    this.loading = false;
+                });
+        },
+        fetchClassesForForm() {
+            // Mengambil daftar kelas untuk mengisi opsi dropdown di form (jika modal dipicu)
+            axios.get(CLASS_API_URL)
+                .then(response => {
+                    this.classes = response.data;
+                })
+                .catch(error => {
+                    console.error("Failed to get class data for form:", error);
+                });
+        },
 
         // method CRUD
         openCreateForm() {
-            this.$emit('open-create');
+            if (this.canManage) {
+                // Tambahkan data FK yang diperlukan ke emit
+                this.$emit('open-create'); 
+            }
         },
         openEditForm(student) {
-            this.$emit('open-edit', student);
+             if (this.canManage && !student.deleted) {
+                this.$emit('open-edit', student);
+            }
         },
         async softDelete(id) {
-            if (!confirm(`You sure to soft delete Student ID ${id}?`)) {
+            if (!this.canManage || !confirm(`You sure to soft delete Student ID ${id}?`)) {
                 return;
             }
 
@@ -85,19 +117,20 @@ export default {
 
             } catch (error) {
                 console.error("Failed to soft delete:", error.response || error);
+                alert("Failed to soft delete. Check console for details.");
             }
         },
 
         // --- Helper ---
         getClassId(classId) {
-          return this.classMap[classId] || 'ID: ' + classId;
+            return this.classMap[classId] || 'ID: ' + classId;
         }
-  }
+    }
 };
 </script>
 
 <style scoped>
-/* Style tambahan */
+/* (Style Anda yang sudah ada di sini...) */
 .list-container { padding: 15px; }
 ul { padding: 0; }
 li {

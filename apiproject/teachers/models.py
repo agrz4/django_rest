@@ -1,5 +1,8 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 from safedelete.models import SafeDeleteModel, SOFT_DELETE_CASCADE
+
+User = get_user_model()
 
 class Teacher(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE

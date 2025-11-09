@@ -10,8 +10,22 @@
             @success="handleSuccessCreation"
         />
         <div class="dashboard-header">
-            <h1 class="dashboard-title">School Management</h1>
+            <h1 class="dashboard-title">Welcome, {{ userRole.toUpperCase() }}!</h1>
             <button @click="logout" class="logout-btn">Logout</button>
+
+            <div v-if="userRole === 'admin' || userRole === 'teacher'" class="data-grid">
+            </div>
+
+            <hr>
+
+            <div class="details-section">
+                <TeacherList v-if="userRole ==='admin'" @data-loaded="updateData" @open-create="openModal('teacher')" @open-edit="openModal('teacher', $event)"/>
+                <StudentList v-if="userRole === 'admin' || userRole === 'teacher'" :class-map="classMap" @data-loaded="updateData" @open-create="openModal('student')" @open-edit="openModal('student', $event)"/>
+
+                <div v-if="userRole === 'student'">
+                    <h3>This is the Student Dashboard. You can view your classes and grades here.</h3>
+                </div>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -40,15 +54,55 @@
 
         <div class="content-section">
             <div class="data-lists">
-                <TeacherList @data-loaded="updateData" @open-create="openModal('teacher')" @open-edit="openModal('teacher', $event)"/>
-                <ClassList :teacher-map="teacherMap" @data-loaded="updateData" @open-create="openModal('class')" @open-edit="openModal('class', $event)"/>
-                <StudentList :class-map="classMap" @data-loaded="updateData" @open-create="openModal('student')" @open-edit="openModal('student', $event)"/>
+                <template v-if="userRole === 'admin'">
+                    <TeacherList 
+                    @data-loaded="updateData"
+                    @open-create="openModal('teacher')"
+                    @open-edit="openModal('teacher', $event)"
+                    />
+
+                    <ClassList 
+                        :teacher-map="teacherMap" 
+                        @data-loaded="updateData" 
+                        @open-create="openModal('class')" 
+                        @open-edit="openModal('class', $event)"
+                    />
+
+                    <StudentList 
+                        :class-map="classMap" 
+                        @data-loaded="updateData" 
+                        @open-create="openModal('student')" 
+                        @open-edit="openModal('student', $event)"
+                    />
+                </template>
+
+                <template v-else-if="userRole === 'teacher'">
+                    <ClassList 
+                        :teacher-map="teacherMap" 
+                        @data-loaded="updateData" 
+                        @open-create="openModal('class')" 
+                        @open-edit="openModal('class', $event)"
+                    />
+                    <StudentList
+                        :class-map="classMap"
+                        @data-loaded="updateData"
+                        @open-create="openModal('student')"
+                        @open-edit="openModal('student', $event)"
+                    />
+                </template>
+
+                <template v-else-if="userRole === 'student'">
+                    <div class="student-view-placeholder">
+                        <p>Anda login sebagai **Siswa**. Anda hanya dapat melihat informasi terkait mata pelajaran dan nilai Anda.</p>
+                        </div>
+                </template>
             </div>
         </div>
     </div>
 </template>
 
 <script>
+import axios from 'axios';
 import TeacherList from './TeacherList.vue';
 import ClassList from './ClassList.vue';
 import StudentList from './StudentList.vue';
@@ -75,6 +129,9 @@ export default {
         };
     },
     computed: {
+        userRole() {
+            return localStorage.getItem('user_role') || 'guest';
+        },
         // membuat map Teacher, Class dan Student untuk ClassList
         teacherMap() {
             return this.teachers.reduce((map, teacher) => {
@@ -124,6 +181,9 @@ export default {
                 this.students = await studentsRes.json();
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
+                if (error.response && error.response.status === 401) {
+                    this.logout();
+                }
             }
         },
         handleSuccessCreation() {
@@ -137,6 +197,7 @@ export default {
         logout() {
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_role');
             this.$router.push('/login');
         },
         getFormConfig(type) {

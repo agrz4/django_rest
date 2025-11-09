@@ -2,26 +2,32 @@
     <div class="list-container teacher-list">
         <h4>Teachers List ({{ teachers.length }})</h4>
 
-        <button @click="openCreateForm" class="btn btn-create">
+        <button v-if="canManage" @click="openCreateForm" class="btn btn-create">
             + Add Teacher
         </button>
 
-        <ul v-if="!loading && !error">
+        <p v-if="loading">Loading teacher data...</p>
+        <p v-if="error">{{ error }}</p>
+
+        <ul v-else>
             <li v-for="teacher in teachers" :key="teacher.id" :class="{ 'deleted-item': teacher.deleted }">
                 <span class="teacher-info">
                     {{ teacher.name }} ({{ teacher.subject }})
                 <span v-if="teacher.deleted" class="deleted-tag">🗑️</span>
                 </span>
 
-                <div class="actions">
+                <div v-if="canManage" class="actions">
                     <button
-                    @click="softDelete(teacher.id)"
-                    :disabled="teacher.deleted"
-                    :class="{'btn-delete': !teacher.deleted, 'btn-disabled': teacher.deleted}">
-                {{ teacher.deleted ? 'Deleted' : 'Soft Delete' }}
-                </button>
-
-                <button class="btn-update" @click="openEditForm(teacher)">Edit</button>
+                        @click="softDelete(teacher.id)"
+                        :disabled="teacher.deleted"
+                        :class="{'btn-delete': !teacher.deleted, 'btn-disabled': teacher.deleted}">
+                        {{ teacher.deleted ? 'Deleted' : 'Soft Delete' }}
+                    </button>
+                    
+                    <button class="btn-update" @click="openEditForm(teacher)" :disabled="teacher.deleted">Edit</button>
+                </div>
+                <div v-else-if="teacher.deleted" class="actions">
+                    <span class="deleted-tag">Status: Deleted</span>
                 </div>
             </li>
         </ul>
@@ -41,6 +47,14 @@ export default {
             loading: true,
             error: null
         };
+    },
+
+    // tambah computer property untuk kontrol akses
+    computed: {
+        canManage() {
+            const role = localStorage.getItem('user_role');
+            return role === 'admin';
+        }
     },
     mounted() {
         this.fetchTeachers();
@@ -63,13 +77,17 @@ export default {
 
         // method CRUD
         openCreateForm() {
-            this.$emit('open-create');
+            if (this.canManage) {
+                this.$emit('open-create');
+            }
         },
         openEditForm(teacher) {
-            this.$emit('open-edit', teacher);
+            if (this.canManage && !teacher.deleted) {
+                this.$emit('open-edit', teacher);
+            }
         },
         async softDelete(id) {
-            if (!confirm(`You sure to soft delete Teacher ID ${id}?`)) {
+            if (!this.canManage || !confirm(`You sure to soft delete Teacher ID ${id}?`)) {
                 return;
             }
 

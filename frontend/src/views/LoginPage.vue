@@ -20,6 +20,7 @@
 
 <script>
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const LOGIN_URL = 'http://127.0.0.1:8000/api/token/';
 
@@ -39,20 +40,39 @@ export default {
             this.error = null;
 
             try {
+                console.log('Attempting login with:', { username: this.username, password: this.password });
                 const response = await axios.post(LOGIN_URL, {
                     username: this.username,
                     password: this.password,
                 });
+                console.log('Login response:', response);
 
                 const { access, refresh } = response.data;
 
+                // Decoded Access Token untuk mendapatkan role
+                const decodedToken = jwtDecode(access);
+                const userRole = decodedToken.role;
+                console.log('Decoded token:', decodedToken);
+                console.log('User role:', userRole);
+
                 localStorage.setItem('access_token', access);
                 localStorage.setItem('refresh_token', refresh);
+                localStorage.setItem('user_role', userRole);
 
                 this.$router.push('/');
             } catch (err) {
                 console.error("Login Fail:", err.response);
-                this.error = "username/password wrong.";
+                if (err.response) {
+                    if (err.response.status === 401) {
+                        this.error = "Invalid username or password.";
+                    } else if (err.response.data) {
+                        this.error = err.response.data.detail || err.response.data.message || 'Login failed';
+                    } else {
+                        this.error = 'Login failed';
+                    }
+                } else {
+                    this.error = err.message || 'Network error';
+                }
             } finally {
                 this.isLoading = false;
             }
